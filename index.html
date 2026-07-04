@@ -28,7 +28,7 @@
   .glogo{width:30px;height:30px;flex:none;border-radius:50%;}
   .hdr .ttl{flex:1;font-size:22px;font-weight:700;letter-spacing:-.2px;}
   .hicon{width:26px;height:26px;color:var(--tx);flex:none;}
-  .avatar{width:34px;height:34px;border-radius:50%;background:#8a55d6;color:#fff;display:grid;place-items:center;font-weight:600;font-size:15px;flex:none;}
+  .avatar{width:34px;height:34px;border-radius:50%;background:#8a55d6;color:#fff;display:grid;place-items:center;font-weight:600;font-size:15px;flex:none;cursor:pointer;}
 
   .idxstrip{display:flex;gap:0;overflow-x:auto;padding:6px 16px 12px;border-bottom:1px solid var(--border);}
   .idxstrip::-webkit-scrollbar{display:none;}
@@ -262,6 +262,17 @@
   </div>
 </div>
 
+<div class="bd" id="wbd"></div>
+<div class="sheet" id="wsheet">
+  <div class="grip"></div>
+  <div class="shd"><button class="lk" id="wCancel">Close</button><h2>Balance</h2><span style="width:48px"></span></div>
+  <div class="sbody">
+    <div style="text-align:center;padding:6px 0 18px"><div style="font-size:12px;color:var(--sub);letter-spacing:.06em;font-weight:700">AVAILABLE BALANCE</div><div class="tnum" id="wBal" style="font-size:34px;font-weight:700;margin-top:6px"></div></div>
+    <div class="fld"><label>Amount (₹)</label><input id="wAmt" inputmode="numeric" placeholder="0"></div>
+    <div class="chips" id="wChips"></div>
+    <div style="display:flex;gap:12px"><button class="btn bsell" id="wWithdraw" style="border-radius:12px">Withdraw</button><button class="btn bbuy" id="wAdd" style="border-radius:12px">Add money</button></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -301,7 +312,34 @@ var U=[["RELIANCE","Reliance Industries",1304,"Energy"],["TCS","Tata Consultancy
 ["TATASTEEL","Tata Steel",150,"Metal"],["ETERNAL","Eternal (Zomato)",260,"New-age"],["PAYTM","One 97 (Paytm)",900,"New-age"],
 ["IRCTC","Indian Railway Catering",800,"Travel"],["ADANIENT","Adani Enterprises",2900,"Infra"],["NTPC","NTPC",360,"Power"],
 ["POWERGRID","Power Grid Corp",320,"Power"],["COALINDIA","Coal India",480,"Energy"],["HINDUNILVR","Hindustan Unilever",2450,"FMCG"],
-["NESTLEIND","Nestle India",2500,"FMCG"],["BAJFINANCE","Bajaj Finance",6900,"Finance"],["M&M","Mahindra & Mahindra",2900,"Auto"]];
+["NESTLEIND","Nestle India",2500,"FMCG"],["BAJFINANCE","Bajaj Finance",6900,"Finance"],["M&M","Mahindra & Mahindra",2900,"Auto"],
+["BAJAJFINSV","Bajaj Finserv",1650,"Finance"],["HDFCLIFE","HDFC Life Insurance",620,"Insurance"],["TECHM","Tech Mahindra",1650,"IT"],
+["INDUSINDBK","IndusInd Bank",1000,"Bank"],["DRREDDY","Dr. Reddy's Labs",1300,"Pharma"],["CIPLA","Cipla",1550,"Pharma"],
+["GRASIM","Grasim Industries",2650,"Cement"],["BAJAJ-AUTO","Bajaj Auto",9500,"Auto"],["EICHERMOT","Eicher Motors",4900,"Auto"],
+["HEROMOTOCO","Hero MotoCorp",4700,"Auto"],["BRITANNIA","Britannia Industries",5600,"FMCG"],["DIVISLAB","Divi's Laboratories",5900,"Pharma"],
+["APOLLOHOSP","Apollo Hospitals",7000,"Pharma"],["SBILIFE","SBI Life Insurance",1450,"Insurance"],["TATACONSUM","Tata Consumer Products",1100,"FMCG"],
+["HINDALCO","Hindalco Industries",660,"Metal"],["SHRIRAMFIN","Shriram Finance",3100,"Finance"],["BPCL","Bharat Petroleum",300,"Energy"],
+["PIDILITIND","Pidilite Industries",3100,"Consumer"],["DMART","Avenue Supermarts",4200,"Retail"],["NYKAA","FSN E-Commerce (Nykaa)",190,"New-age"],
+["POLICYBZR","PB Fintech (PolicyBazaar)",1800,"New-age"],["INDIGO","InterGlobe (IndiGo)",4500,"Travel"],["DLF","DLF",850,"Realty"],
+["GODREJPROP","Godrej Properties",3000,"Realty"],["OBEROIRLTY","Oberoi Realty",1900,"Realty"],["VBL","Varun Beverages",620,"FMCG"],
+["TRENT","Trent",6500,"Retail"],["HAVELLS","Havells India",1900,"Consumer"],["DABUR","Dabur India",520,"FMCG"],["MARICO","Marico",650,"FMCG"],
+["GODREJCP","Godrej Consumer",1250,"FMCG"],["COLPAL","Colgate-Palmolive",3200,"FMCG"],["BERGEPAINT","Berger Paints",500,"Consumer"],
+["LTIM","LTIMindtree",6200,"IT"],["PERSISTENT","Persistent Systems",5600,"IT"],["COFORGE","Coforge",8500,"IT"],["MPHASIS","Mphasis",2900,"IT"],
+["LUPIN","Lupin",2200,"Pharma"],["AUROPHARMA","Aurobindo Pharma",1500,"Pharma"],["BIOCON","Biocon",350,"Pharma"],["TORNTPHARM","Torrent Pharma",3300,"Pharma"],
+["ALKEM","Alkem Labs",5500,"Pharma"],["VEDL","Vedanta",460,"Metal"],["JINDALSTEL","Jindal Steel",950,"Metal"],["NMDC","NMDC",230,"Metal"],
+["SAIL","Steel Authority",130,"Metal"],["HINDZINC","Hindustan Zinc",500,"Metal"],["IOC","Indian Oil Corp",140,"Energy"],["GAIL","GAIL India",200,"Energy"],
+["TATAPOWER","Tata Power",420,"Power"],["ADANIGREEN","Adani Green Energy",1050,"Power"],["ADANIPOWER","Adani Power",550,"Power"],["NHPC","NHPC",85,"Power"],
+["PFC","Power Finance Corp",480,"Finance"],["RECLTD","REC",520,"Finance"],["IRFC","Indian Railway Finance",160,"Finance"],["CHOLAFIN","Cholamandalam Invest",1250,"Finance"],
+["MUTHOOTFIN","Muthoot Finance",1900,"Finance"],["ICICIGI","ICICI Lombard",1850,"Insurance"],["ICICIPRULI","ICICI Prudential Life",650,"Insurance"],
+["PNB","Punjab National Bank",100,"Bank"],["BANKBARODA","Bank of Baroda",240,"Bank"],["IDFCFIRSTB","IDFC First Bank",65,"Bank"],
+["AUBANK","AU Small Finance Bank",620,"Bank"],["FEDERALBNK","Federal Bank",200,"Bank"],["HAL","Hindustan Aeronautics",4500,"Defence"],
+["BEL","Bharat Electronics",300,"Defence"],["BDL","Bharat Dynamics",1200,"Defence"],["MAZDOCK","Mazagon Dock",4300,"Defence"],
+["CGPOWER","CG Power & Industrial",750,"Capital Goods"],["ABB","ABB India",8000,"Capital Goods"],["POLYCAB","Polycab India",6900,"Capital Goods"],
+["DIXON","Dixon Technologies",14000,"Electronics"],["BOSCHLTD","Bosch",34000,"Auto"],["MOTHERSON","Samvardhana Motherson",165,"Auto"],
+["TVSMOTOR","TVS Motor",2400,"Auto"],["ASHOKLEY","Ashok Leyland",230,"Auto"],["AMBUJACEM","Ambuja Cements",620,"Cement"],["ACC","ACC",2200,"Cement"],
+["ULTRACEMCO","UltraTech Cement",11500,"Cement"],["SHREECEM","Shree Cement",26000,"Cement"],["JUBLFOOD","Jubilant FoodWorks",650,"Consumer"],
+["UBL","United Breweries",2000,"FMCG"],["INDHOTEL","Indian Hotels",780,"Travel"],["INDUSTOWER","Indus Towers",380,"Telecom"],
+["IDEA","Vodafone Idea",8,"Telecom"],["SUNTV","Sun TV Network",700,"Media"],["ZEEL","Zee Entertainment",140,"Media"],["ASIANPAINT","Asian Paints",2900,"Consumer"]];
 var BY={};U.forEach(function(r){BY[r[0]]={s:r[0],n:r[1],base:r[2],sec:r[3]};});
 
 var FUNDS=[["HDFC Balanced Advantage Fund Direct Growth",38.5,"Hybrid",null],
@@ -309,7 +347,14 @@ var FUNDS=[["HDFC Balanced Advantage Fund Direct Growth",38.5,"Hybrid",null],
 ["HDFC Mid Cap Fund",188,"Mid Cap",20.99],["Parag Parikh Flexi Cap Fund",79,"Flexi Cap",15.05],
 ["Axis Silver FoF Direct-Growth",18,"ETF FoF",22.1],["Nippon India Large Cap Fund",92,"Large Cap",18.4],
 ["Quant Small Cap Fund",265,"Small Cap",24.6],["SBI Contra Fund",385,"Contra",21.3],["Mirae Asset Large Cap Fund",105,"Large Cap",16.8],
-["UTI Nifty 50 Index Fund",155,"Index",14.2],["Motilal Oswal Midcap Fund",108,"Mid Cap",27.5]];
+["UTI Nifty 50 Index Fund",155,"Index",14.2],["Motilal Oswal Midcap Fund",108,"Mid Cap",27.5],
+["Bandhan Nifty 50 Index Fund",42,"Index",13.9],["Bandhan Flexi Cap Fund",210,"Flexi Cap",17.4],
+["Bandhan ELSS Tax Saver Fund",165,"ELSS",19.6],["Bandhan Balanced Advantage Fund",24,"Hybrid",12.8],
+["Nippon India Small Cap Fund",168,"Small Cap",31.2],["ICICI Prudential Technology Fund",205,"Sectoral",22.7],
+["SBI Small Cap Fund",178,"Small Cap",26.4],["Axis Bluechip Fund",62,"Large Cap",15.9],
+["Kotak Emerging Equity Fund",118,"Mid Cap",23.1],["Tata Digital India Fund",48,"Sectoral",20.5],
+["Canara Robeco Bluechip Fund",64,"Large Cap",16.2],["Quant Flexi Cap Fund",95,"Flexi Cap",25.8],
+["HDFC Balanced Advantage Fund",505,"Hybrid",18.9],["Mirae Asset ELSS Tax Saver Fund",47,"ELSS",17.1]];
 var BYF={};FUNDS.forEach(function(r){BYF[r[0]]={n:r[0],base:r[1],cat:r[2],y3:r[3]};});
 
 var INDICES=[["NIFTY 50","24,270.85","+95.15","0.39%",1],["SENSEX","77,763.91","+261.79","0.34%",1],["BANK NIFTY","57,938.50","-93.15","0.16%",0]];
@@ -345,7 +390,7 @@ function aOpen(k,id){return k==="mf"?navo(id):pxo(id);}
 function aExists(k,id){return k==="mf"?!!BYF[id]:!!BY[id];}
 
 var DEF={
-  name:"S",balance:15000,
+  name:"S",balance:150000,
   stocks:[{sym:"TCS",qty:2,avg:1980},{sym:"INFY",qty:5,avg:1010},{sym:"RELIANCE",qty:3,avg:1250}],
   funds:[{name:"HDFC Balanced Advantage Fund Direct Growth",qty:9.6667,avg:38.483}],
   watch:["HCLTECH","ETERNAL","IRCTC","MARUTI"],
@@ -353,7 +398,7 @@ var DEF={
   orders:[],
   sips:[{fund:"HDFC Balanced Advantage Fund Direct Growth",amount:100,day:13}]
 };
-var KEY="groww_g_v1";
+var KEY="groww_g_v2";
 var state=load();
 function load(){try{var r=localStorage.getItem(KEY);if(r){var s=JSON.parse(r);["stocks","funds","watch","fwatch","orders","sips"].forEach(function(k){if(!s[k])s[k]=[];});return s;}}catch(e){}return JSON.parse(JSON.stringify(DEF));}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
@@ -372,6 +417,7 @@ function renderHead(){
   var tabs=TABS[product];
   h+='<div class="subtabs">'+tabs.map(function(t){return '<div class="stab'+(t===tab?" on":"")+'" data-t="'+t+'">'+t+'</div>';}).join("")+'</div>';
   $("head").innerHTML=h;
+  var _av=$("head").querySelector(".avatar");if(_av)_av.addEventListener("click",openWallet);
   $("head").querySelectorAll(".stab").forEach(function(el){el.addEventListener("click",function(){tab=el.getAttribute("data-t");renderHead();renderBody();$("scroll").scrollTop=0;});});
 }
 
@@ -638,6 +684,15 @@ function openSip(fund){$("sFund").value=fund;$("sAmt").value=500;$("sDay").value
 function closeSip(){$("ssheet").classList.remove("open");$("sbd").classList.remove("open");}
 $("sCancel").addEventListener("click",closeSip);$("sbd").addEventListener("click",closeSip);
 $("sConfirm").addEventListener("click",function(){var a=parseInt($("sAmt").value,10)||0,d=Math.min(28,Math.max(1,parseInt($("sDay").value,10)||1));if(a<100){toast("Minimum ₹100");return;}state.sips.push({fund:$("sFund").value,amount:a,day:d});save();closeSip();product="mf";tab="SIPs";syncNav();renderHead();renderBody();toast("SIP started");});
+
+function openWallet(){$("wBal").textContent=inr(state.balance);$("wAmt").value="";
+  $("wChips").innerHTML=[1000,5000,25000,50000].map(function(a){return '<button class="chip" data-a="'+a+'">+'+inr(a)+'</button>';}).join("");
+  $("wChips").querySelectorAll(".chip").forEach(function(b){b.onclick=function(){$("wAmt").value=(parseInt($("wAmt").value,10)||0)+(+b.getAttribute("data-a"));};});
+  $("wsheet").classList.add("open");$("wbd").classList.add("open");}
+function closeWallet(){$("wsheet").classList.remove("open");$("wbd").classList.remove("open");}
+$("wCancel").addEventListener("click",closeWallet);$("wbd").addEventListener("click",closeWallet);
+$("wAdd").addEventListener("click",function(){var a=parseInt($("wAmt").value,10)||0;if(a<=0){toast("Enter an amount");return;}state.balance+=a;save();$("wBal").textContent=inr(state.balance);toast("Added "+inr(a));$("wAmt").value="";if(product==="mf"&&tab==="Dashboard")renderBody();});
+$("wWithdraw").addEventListener("click",function(){var a=parseInt($("wAmt").value,10)||0;if(a<=0){toast("Enter an amount");return;}if(a>state.balance){toast("Amount exceeds balance");return;}state.balance-=a;save();$("wBal").textContent=inr(state.balance);toast("Withdrew "+inr(a));$("wAmt").value="";});
 
 window.addEventListener("resize",function(){if($("detail").classList.contains("open")&&cpts.length)drawChart(true);if(product==="stocks"&&tab==="Explore")drawTS();});
 
