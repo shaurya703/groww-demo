@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Groww">
-<meta name="description" content="Groww-style investing demo — NSE stocks, buy/sell, watchlist, orders and SIPs.">
+<meta name="description" content="Groww-style investing app — NSE stocks, buy/sell, watchlist, orders and SIPs.">
 <style>
   :root {
     --green: #00d09c; --green-press: #00b386; --green-ink:#00332a;
@@ -106,7 +106,9 @@
   .holdlist { margin-top:6px; }
   .hold { display:flex; align-items:center; gap:12px; padding:14px 4px; border-bottom:1px solid var(--hair); cursor:pointer; }
   .hold:last-child { border-bottom:none; } .hold:active { background: var(--subtle); }
-  .logo { width:40px; height:40px; border-radius:11px; flex:none; display:grid; place-items:center; font-weight:700; font-size:13px; color:#fff; overflow:hidden; }
+  .logo { width:40px; height:40px; border-radius:11px; flex:none; display:grid; place-items:center; font-weight:700; font-size:13px; color:#fff; overflow:hidden; position:relative; }
+  .logo .li { line-height:1; }
+  .logo img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#fff; border-radius:inherit; padding:4px; }
   .hmid { flex:1; min-width:0; }
   .hname { font-size:14.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .hsub { font-size:12px; color:var(--sub); margin-top:3px; }
@@ -338,7 +340,6 @@
     <div class="chips" id="chips"></div>
     <div class="scroll" id="exScroll" style="padding-top:0">
       <div class="exlist" id="exlist"></div>
-      <p class="disclaim">Prices are a realistic market simulation for demo use — not live NSE quotes.</p>
     </div>
   </section>
 
@@ -377,7 +378,7 @@
         <div class="mrow" data-p="theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" stroke-linejoin="round"/></svg><div class="mt">Appearance (light / dark)</div><span class="chev">›</span></div>
         <div class="mrow" data-p="reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="mt dngr">Reset app data</div><span class="chev">›</span></div>
       </div>
-      <p class="disclaim">Groww-style demo · Simulated market data · v3.0<br>Not affiliated with Groww. For personal use only.</p>
+      <p class="disclaim">Groww · v3.1</p>
     </div>
   </section>
 
@@ -414,7 +415,6 @@
       <div class="ownrow"><span class="k">Current value</span><span class="val tnum" id="ownCur"></span></div>
       <div class="ownrow"><span class="k">Returns</span><span class="val tnum" id="ownRet"></span></div>
     </div>
-    <p class="disclaim">Simulated market data for personal demo use — not live NSE quotes or investment advice.</p>
   </div>
   <div class="actionbar">
     <button class="btn btn-sell" id="sellBtn">Sell</button>
@@ -449,7 +449,6 @@
     <div class="amtchips" id="sipAmtChips"></div>
     <div class="field"><label>SIP date (every month)</label><select id="sipDay"></select></div>
     <button class="save" id="sipConfirm">Start SIP</button>
-    <p class="hint">SIPs are simulated for demo purposes — no real money is invested.</p>
   </div>
 </div>
 
@@ -538,8 +537,23 @@
   var BYSYM = {}; U.forEach(function(r){ BYSYM[r[0]] = { s:r[0], n:r[1], base:r[2], sec:r[3] }; });
   var SECTORS = ["All","Bank","IT","Auto","Pharma","FMCG","Energy","Metal","Finance","New-age","Power","Consumer","Defence"];
   var MOST_BOUGHT = ["RELIANCE","TATAMOTORS","ETERNAL","HDFCBANK","IRCTC","INFY","SBIN","PAYTM","TATASTEEL","ADANIENT","IREDA","YESBANK"];
-  var MF_FUNDS = ["Parag Parikh Flexi Cap","Nippon India Small Cap","Quant Small Cap","HDFC Balanced Advantage",
+  var MF_FUNDS = ["Bandhan Small Cap Fund","Bandhan Nifty 50 Index Fund","Bandhan Flexi Cap Fund","Bandhan Core Equity Fund",
+    "Bandhan ELSS Tax Saver Fund","Bandhan Balanced Advantage Fund",
+    "Parag Parikh Flexi Cap","Nippon India Small Cap","Quant Small Cap","HDFC Balanced Advantage",
     "Mirae Asset Large Cap","Axis Bluechip","SBI Contra Fund","ICICI Pru Technology","UTI Nifty 50 Index","Motilal Oswal Midcap"];
+
+  /* ---------- real logos (Groww CDN, keyed by symbol / AMC) ---------- */
+  var LOGO_OV={DRREDDY:"RDY.webp",PIDILITIND:"PIDILITE.webp",PERSISTENT:"Persistent.webp",JINDALSTEL:"JINDALSTEL(1).webp",ETERNAL:"ETERNAL.png"};
+  function logoUrl(sym){ var f=LOGO_OV[sym]||(encodeURIComponent(sym)+".webp"); return "https://assets-netstorage.groww.in/stock-assets/logos2/"+f; }
+  function amcOf(n){ n=n||"";
+    if(/^Parag Parikh/.test(n))return"ppfas"; if(/^Nippon/.test(n))return"nippon"; if(/^Quant/.test(n))return"quant";
+    if(/^HDFC/.test(n))return"hdfc"; if(/^Mirae/.test(n))return"mirae"; if(/^Axis/.test(n))return"axis";
+    if(/^SBI/.test(n))return"sbi"; if(/^ICICI/.test(n))return"icici"; if(/^UTI/.test(n))return"uti";
+    if(/^Motilal/.test(n))return"motilal"; if(/^Bandhan/.test(n))return"bandhan"; return""; }
+  function mfLogo(name){ var a=amcOf(name); return a?"https://assets-netstorage.groww.in/mf-assets/logos/"+a+"_groww.png":""; }
+  function logoInner(url,name){ return '<span class="li">'+initials(name)+'</span>'+(url?'<img src="'+url+'" alt="" loading="lazy" onerror="this.remove()">':''); }
+  function stockLogoHTML(sym,name){ return '<div class="logo" style="background:'+colorFor(name)+'">'+logoInner(logoUrl(sym),name)+'</div>'; }
+  function mfLogoHTML(name){ return '<div class="logo" style="background:'+colorFor(name)+'">'+logoInner(mfLogo(name),name)+'</div>'; }
 
   /* ---------- price sim ---------- */
   function hash(str){ var h=2166136261; for(var i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=(h*16777619)>>>0; } return h; }
@@ -559,7 +573,8 @@
       {type:"stock",sym:"HDFCBANK",qty:25,avg:1450},{type:"stock",sym:"INFY",qty:30,avg:1300},
       {type:"stock",sym:"TATAMOTORS",qty:40,avg:620},{type:"stock",sym:"ETERNAL",qty:200,avg:110},
       {type:"mf",name:"Parag Parikh Flexi Cap",qty:820,avg:58,ltp:79},
-      {type:"mf",name:"Nippon India Small Cap",qty:410,avg:112,ltp:168}
+      {type:"mf",name:"Nippon India Small Cap",qty:410,avg:112,ltp:168},
+      {type:"mf",name:"Bandhan Small Cap Fund",qty:640,avg:39,ltp:53}
     ],
     watchlist:["ADANIENT","IRCTC","PAYTM","HAL"],
     orders:[],
@@ -571,7 +586,9 @@
   function load(){ try{var r=localStorage.getItem(KEY); if(r) return JSON.parse(r);}catch(e){} return JSON.parse(JSON.stringify(DEFAULT)); }
   function migrate(){ if(!state.watchlist) state.watchlist=DEFAULT.watchlist.slice();
     if(!state.orders) state.orders=[]; if(!state.sips) state.sips=DEFAULT.sips.slice();
-    if(!state.email) state.email=DEFAULT.email; }
+    if(!state.email||state.email==="kesar.rahulk@gmail.com") state.email=DEFAULT.email;
+    if(!state.holdings.some(function(h){return h.type==="mf"&&/^Bandhan/.test(h.name);}))
+      state.holdings.push({type:"mf",name:"Bandhan Small Cap Fund",qty:640,avg:39,ltp:53}); }
   function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 
   /* ---------- helpers ---------- */
@@ -625,7 +642,7 @@
     });
     if(!rows.length){ list.innerHTML='<div class="empty">No stocks yet.<br><span class="cta" data-goto="explore">Explore stocks to buy →</span></div>'; wireGoto(list); return; }
     list.innerHTML=rows.map(function(h){ var ltp=ltpOf(h),inv=h.qty*h.avg,cur=h.qty*ltp,ret=cur-inv,pct=inv?ret/inv*100:0,cls=ret>=0?"up":"down"; var nm=nameOf(h);
-      return '<div class="hold" data-open="'+h.sym+'"><div class="logo" style="background:'+colorFor(nm)+'">'+initials(nm)+'</div>'+
+      return '<div class="hold" data-open="'+h.sym+'">'+stockLogoHTML(h.sym,nm)+
         '<div class="hmid"><div class="hname">'+esc(nm)+'</div><div class="hsub tnum">'+h.qty+" shares · Avg "+inr(h.avg,2)+'</div></div>'+
         '<div class="hright"><div class="hval tnum" data-hpx="'+h.sym+'">'+inr(cur)+'</div>'+
         '<div class="hret tnum '+cls+'">'+(ret>=0?"+":"")+inr(ret)+' ('+(ret>=0?"+":"")+pct.toFixed(2)+'%)</div></div></div>';
@@ -638,12 +655,12 @@
     var mfs=state.holdings.filter(function(h){return h.type==="mf";});
     var html='<div class="sec-title">Your funds</div>';
     if(mfs.length){ html+='<div class="holdlist">'+mfs.map(function(h){ var inv=h.qty*h.avg,cur=h.qty*h.ltp,ret=cur-inv,pct=inv?ret/inv*100:0,cls=ret>=0?"up":"down";
-      return '<div class="hold"><div class="logo" style="background:'+colorFor(h.name)+'">'+initials(h.name)+'</div>'+
+      return '<div class="hold">'+mfLogoHTML(h.name)+
         '<div class="hmid"><div class="hname">'+esc(h.name)+'</div><div class="hsub tnum">'+inr(cur)+' · '+(ret>=0?"+":"")+pct.toFixed(2)+'%</div></div>'+
         '<div class="hright"><div class="hret tnum '+cls+'">'+(ret>=0?"+":"")+inr(ret)+'</div></div></div>'; }).join("")+'</div>'; }
     html+='<div class="sec-title" style="margin-top:22px">Active SIPs</div>';
     if(state.sips.length){ html+='<div class="holdlist">'+state.sips.map(function(s,i){
-      return '<div class="siprow" data-sip="'+i+'"><div class="logo" style="background:'+colorFor(s.fund)+'">'+initials(s.fund)+'</div>'+
+      return '<div class="siprow" data-sip="'+i+'">'+mfLogoHTML(s.fund)+
         '<div class="sipmid"><div class="sipname">'+esc(s.fund)+'</div><div class="sipsub">Monthly · Next '+nextSip(s.day)+'</div></div>'+
         '<div class="sipamt tnum">'+inr(s.amount)+'</div></div>'; }).join("")+'</div>'; }
     else { html+='<div class="empty" style="padding:24px 16px">No active SIPs yet.</div>'; }
@@ -676,7 +693,7 @@
     $("chips").querySelectorAll(".fchip").forEach(function(b){ b.addEventListener("click",function(){ activeSector=b.getAttribute("data-sec"); renderChips(); renderExplore(); }); }); }
   function starSvg(on){ return '<svg viewBox="0 0 24 24"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z" stroke-linejoin="round"/></svg>'; }
   function exRowHTML(sym){ var m=BYSYM[sym],px=priceOf(sym),op=openOf(sym),ch=px-op,pct=op?ch/op*100:0,cls=ch>=0?"up":"down";
-    return '<div class="exrow" data-open="'+sym+'"><div class="logo" style="background:'+colorFor(m.n)+'">'+initials(m.n)+'</div>'+
+    return '<div class="exrow" data-open="'+sym+'">'+stockLogoHTML(sym,m.n)+
       '<div class="exmid"><div class="exname">'+esc(m.n)+'</div><div class="exsub">'+sym+' · '+m.sec+'</div></div>'+
       '<div class="exright"><div class="col"><div class="expx tnum" data-px="'+sym+'">'+inr(px,2)+'</div>'+
       '<div class="exchg tnum '+cls+'" data-chg="'+sym+'">'+(ch>=0?"+":"")+pct.toFixed(2)+'%</div></div>'+
@@ -804,7 +821,7 @@
   var tradeMode="buy",tradeQty=1;
   function openTrade(mode){ tradeMode=mode; var m=BYSYM[curSym],held=holdingFor(curSym); tradeQty=1;
     $("tradeTitle").textContent=mode==="buy"?"Buy":"Sell"; $("tradeConfirm").textContent=(mode==="buy"?"Buy ":"Sell ")+m.n.split(" ")[0];
-    $("tLogo").style.background=colorFor(m.n); $("tLogo").textContent=initials(m.n); $("tName").textContent=m.n;
+    $("tLogo").style.background=colorFor(m.n); $("tLogo").innerHTML=logoInner(logoUrl(curSym),m.n); $("tName").textContent=m.n;
     $("tTotalLbl").textContent=mode==="buy"?"Order total":"You receive"; $("tBalLbl").textContent=mode==="buy"?"Available balance":"You hold";
     $("qInput").value=1; syncTrade(); $("tradeSheet").classList.add("open"); $("tradeBackdrop").classList.add("open"); }
   function closeTrade(){ $("tradeSheet").classList.remove("open"); $("tradeBackdrop").classList.remove("open"); }
