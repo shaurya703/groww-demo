@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Groww">
-<meta name="description" content="Groww-style investing app — NSE stocks, buy/sell, watchlist, orders and SIPs.">
+<meta name="description" content="Groww-style investing app — NSE stocks, mutual funds, buy/sell, watchlist, orders and SIPs.">
 <style>
   :root {
     --green: #00d09c; --green-press: #00b386; --green-ink:#00332a;
@@ -253,6 +253,10 @@
   .stepper button { width:34px; height:34px; border-radius:9px; border:1px solid var(--hair); background:var(--card); color:var(--ink); font-size:20px; cursor:pointer; display:grid; place-items:center; }
   .stepper input { width:56px; text-align:center; font-size:17px; font-weight:700; border:none; background:none; color:var(--ink); font-family:inherit; }
   .qval { font-weight:700; font-size:15px; }
+  .balline { display:flex; justify-content:space-between; font-size:12.5px; color:var(--sub); margin-top:6px; }
+  .exasset { display:flex; gap:8px; padding:2px 16px 10px; }
+  .eatab { flex:1; padding:9px 0; border-radius:10px; border:1px solid var(--hair); background:var(--card); color:var(--sub); font-weight:700; font-size:14px; cursor:pointer; }
+  .eatab.active { background:var(--green); color:var(--green-ink); border-color:var(--green); }
   .field { margin-bottom:14px; }
   .field label { display:block; font-size:12px; color:var(--sub); font-weight:600; margin-bottom:6px; }
   .field input, .field select { width:100%; padding:11px 12px; border-radius:10px; font-size:15px; border:1px solid var(--hair); background:var(--subtle); color:var(--ink); font-family:inherit; }
@@ -330,6 +334,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4" stroke-linecap="round"/></svg>
         <input id="searchInput" type="text" placeholder="Search stocks — e.g. Reliance, TCS" autocomplete="off" />
       </div>
+    </div>
+    <div class="exasset" id="exAssetTog">
+      <button class="eatab active" data-a="stock">Stocks</button>
+      <button class="eatab" data-a="mf">Mutual Funds</button>
     </div>
     <div class="moods" id="moods">
       <button class="mood active" data-m="all">All</button>
@@ -429,11 +437,8 @@
   <div class="sheet-head"><button class="linkbtn" id="tradeCancel">Cancel</button><h2 id="tradeTitle">Buy</h2><span style="width:48px"></span></div>
   <div class="sheet-body">
     <div class="tradetop"><div class="logo" id="tLogo" style="width:38px;height:38px"></div><div class="tn"><div class="n" id="tName"></div><div class="p tnum" id="tPrice"></div></div></div>
-    <div class="qtyrow"><span class="k">Quantity</span><div class="stepper"><button id="qMinus">−</button><input id="qInput" inputmode="numeric" value="1" /><button id="qPlus">+</button></div></div>
-    <div class="qtyrow"><span class="k">Approx. price</span><span class="qval tnum" id="tUnit"></span></div>
-    <div class="qtyrow"><span class="k" id="tTotalLbl">Order total</span><span class="qval tnum" id="tTotal"></span></div>
-    <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--sub);margin-bottom:16px"><span id="tBalLbl">Available balance</span><span class="tnum" id="tBal"></span></div>
-    <button class="save" id="tradeConfirm">Buy</button>
+    <div id="tradeControls"></div>
+    <button class="save" id="tradeConfirm" style="margin-top:16px">Buy</button>
     <p class="hint" id="tradeHint"></p>
   </div>
 </div>
@@ -476,10 +481,10 @@
   function meta(n,c){ var m=document.createElement("meta"); m.name=n; m.content=c; document.head.appendChild(m); }
   meta("apple-mobile-web-app-capable","yes"); meta("mobile-web-app-capable","yes");
   meta("apple-mobile-web-app-status-bar-style","default"); meta("apple-mobile-web-app-title","Groww"); meta("theme-color","#ffffff");
-  (function(){ var c=document.createElement("canvas"); c.width=c.height=180; var x=c.getContext("2d");
+  try{ var c=document.createElement("canvas"); c.width=c.height=180; var x=c.getContext("2d");
     x.fillStyle="#00d09c"; (x.roundRect?(x.beginPath(),x.roundRect(0,0,180,180,40),x.fill()):x.fillRect(0,0,180,180));
     x.fillStyle="#fff"; x.font="700 118px -apple-system,Arial"; x.textAlign="center"; x.textBaseline="middle"; x.fillText("G",90,100);
-    var l=document.createElement("link"); l.rel="apple-touch-icon"; l.href=c.toDataURL("image/png"); document.head.appendChild(l); })();
+    var l=document.createElement("link"); l.rel="apple-touch-icon"; l.href=c.toDataURL("image/png"); document.head.appendChild(l); }catch(e){}
 
   /* ---------- NSE universe ---------- */
   var U = [
@@ -555,6 +560,34 @@
   function stockLogoHTML(sym,name){ return '<div class="logo" style="background:'+colorFor(name)+'">'+logoInner(logoUrl(sym),name)+'</div>'; }
   function mfLogoHTML(name){ return '<div class="logo" style="background:'+colorFor(name)+'">'+logoInner(mfLogo(name),name)+'</div>'; }
 
+  /* ---------- mutual fund universe + NAV simulation ---------- */
+  var FUNDS = [
+    ["Bandhan Small Cap Fund",53,"Small Cap"],["Bandhan Nifty 50 Index Fund",42,"Index"],
+    ["Bandhan Flexi Cap Fund",210,"Flexi Cap"],["Bandhan Core Equity Fund",128,"Large & Mid"],
+    ["Bandhan ELSS Tax Saver Fund",165,"ELSS"],["Bandhan Balanced Advantage Fund",24,"Hybrid"],
+    ["Parag Parikh Flexi Cap",79,"Flexi Cap"],["Nippon India Small Cap",168,"Small Cap"],
+    ["Quant Small Cap",265,"Small Cap"],["HDFC Balanced Advantage",505,"Hybrid"],
+    ["Mirae Asset Large Cap",105,"Large Cap"],["Axis Bluechip",62,"Large Cap"],
+    ["SBI Contra Fund",385,"Contra"],["ICICI Pru Technology",205,"Sectoral"],
+    ["UTI Nifty 50 Index",155,"Index"],["Motilal Oswal Midcap",108,"Mid Cap"]
+  ];
+  var BYMF={}; FUNDS.forEach(function(r){ BYMF[r[0]]={n:r[0],base:r[1],cat:r[2]}; });
+  var MFLIVE={};
+  function navBase(name){ var m=BYMF[name]; if(m) return m.base;
+    var h=state&&state.holdings&&state.holdings.filter(function(x){return x.type==="mf"&&x.name===name;})[0];
+    return h?(h.ltp||h.avg||100):100; }
+  function navOf(name){ if(MFLIVE[name]) return MFLIVE[name].px; var base=navBase(name);
+    var seed=hash(name)/4294967295, open=base*(1-(seed-0.5)*0.012); MFLIVE[name]={px:base,open:open}; return base; }
+  function navOpenOf(name){ navOf(name); return MFLIVE[name].open; }
+  function navPctOf(name){ var p=navOf(name),o=navOpenOf(name); return o?(p-o)/o*100:0; }
+
+  /* ---------- unified asset helpers (stock or mf) ---------- */
+  function aExists(k,id){ return k==="mf"?!!BYMF[id]:!!BYSYM[id]; }
+  function aName(k,id){ return k==="mf"?id:(BYSYM[id]?BYSYM[id].n:id); }
+  function aPrice(k,id){ return k==="mf"?navOf(id):priceOf(id); }
+  function aOpen(k,id){ return k==="mf"?navOpenOf(id):openOf(id); }
+  function aLogoHTML(k,id){ return k==="mf"?mfLogoHTML(id):stockLogoHTML(id,aName(k,id)); }
+
   /* ---------- price sim ---------- */
   function hash(str){ var h=2166136261; for(var i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=(h*16777619)>>>0; } return h; }
   var LIVE = {};
@@ -563,7 +596,9 @@
   function openOf(sym){ priceOf(sym); return LIVE[sym].open; }
   function pctOf(sym){ var p=priceOf(sym),o=openOf(sym); return o?(p-o)/o*100:0; }
   function tick(){ for(var s in LIVE){ var l=LIVE[s]; var drift=(Math.random()-0.5)*0.004, pull=(l.open-l.px)/l.open*0.02;
-    l.px=Math.max(0.5,l.px*(1+drift+pull)); } refreshLive(); }
+    l.px=Math.max(0.5,l.px*(1+drift+pull)); }
+    for(var f in MFLIVE){ var m=MFLIVE[f]; var d=(Math.random()-0.5)*0.0016, p=(m.open-m.px)/m.open*0.02; m.px=Math.max(1,m.px*(1+d+p)); }
+    refreshLive(); }
 
   /* ---------- state ---------- */
   var DEFAULT = {
@@ -582,7 +617,7 @@
   };
   var KEY="groww_clone_v2";
   var state=load(); migrate();
-  var activeType="stock", activeSector="All", exMood="all", curSym=null, holdSort="value";
+  var activeType="stock", activeSector="All", exMood="all", exAsset="stock", curKind="stock", curId=null, holdSort="value";
   function load(){ try{var r=localStorage.getItem(KEY); if(r) return JSON.parse(r);}catch(e){} return JSON.parse(JSON.stringify(DEFAULT)); }
   function migrate(){ if(!state.watchlist) state.watchlist=DEFAULT.watchlist.slice();
     if(!state.orders) state.orders=[]; if(!state.sips) state.sips=DEFAULT.sips.slice();
@@ -599,7 +634,7 @@
   function colorFor(name){ return LC[hash(name)%LC.length]; }
   function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c];}); }
   function nameOf(h){ return h.type==="mf"?h.name:(BYSYM[h.sym]?BYSYM[h.sym].n:h.sym); }
-  function ltpOf(h){ return h.type==="mf"?h.ltp:priceOf(h.sym); }
+  function ltpOf(h){ return h.type==="mf"?navOf(h.name):priceOf(h.sym); }
   function inWatch(sym){ return state.watchlist.indexOf(sym)>=0; }
   var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   function fmtDate(ts){ var d=new Date(ts); var h=d.getHours(), ap=h>=12?"PM":"AM", h12=(h%12)||12;
@@ -609,8 +644,8 @@
   function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(function(){t.classList.remove("show");},1900); }
 
   /* ---------- totals / home ---------- */
-  function totals(){ var inv=0,cur=0,day=0; state.holdings.forEach(function(h){ var ltp=ltpOf(h); inv+=h.qty*h.avg; cur+=h.qty*ltp;
-    if(h.type==="stock") day+=h.qty*(ltp-openOf(h.sym)); }); return {inv:inv,cur:cur,ret:cur-inv,pct:inv?((cur-inv)/inv*100):0,day:day}; }
+  function totals(){ var inv=0,cur=0,day=0; state.holdings.forEach(function(h){ var k=h.type,id=k==="mf"?h.name:h.sym,ltp=aPrice(k,id);
+    inv+=h.qty*h.avg; cur+=h.qty*ltp; day+=h.qty*(ltp-aOpen(k,id)); }); return {inv:inv,cur:cur,ret:cur-inv,pct:inv?((cur-inv)/inv*100):0,day:day}; }
 
   function renderHome(){
     $("greetName").textContent=state.name||"Investor"; $("avatar").textContent=(state.name||"I").trim()[0].toUpperCase();
@@ -654,10 +689,12 @@
     if(activeType!=="mf"){ box.style.display="none"; return; } box.style.display="block";
     var mfs=state.holdings.filter(function(h){return h.type==="mf";});
     var html='<div class="sec-title">Your funds</div>';
-    if(mfs.length){ html+='<div class="holdlist">'+mfs.map(function(h){ var inv=h.qty*h.avg,cur=h.qty*h.ltp,ret=cur-inv,pct=inv?ret/inv*100:0,cls=ret>=0?"up":"down";
-      return '<div class="hold">'+mfLogoHTML(h.name)+
-        '<div class="hmid"><div class="hname">'+esc(h.name)+'</div><div class="hsub tnum">'+inr(cur)+' · '+(ret>=0?"+":"")+pct.toFixed(2)+'%</div></div>'+
-        '<div class="hright"><div class="hret tnum '+cls+'">'+(ret>=0?"+":"")+inr(ret)+'</div></div></div>'; }).join("")+'</div>'; }
+    if(mfs.length){ html+='<div class="holdlist">'+mfs.map(function(h){ var ltp=navOf(h.name),inv=h.qty*h.avg,cur=h.qty*ltp,ret=cur-inv,pct=inv?ret/inv*100:0,cls=ret>=0?"up":"down";
+      return '<div class="hold" data-mf="'+esc(h.name)+'">'+mfLogoHTML(h.name)+
+        '<div class="hmid"><div class="hname">'+esc(h.name)+'</div><div class="hsub tnum">'+h.qty.toFixed(3)+' units · Avg NAV '+inr(h.avg,2)+'</div></div>'+
+        '<div class="hright"><div class="hval tnum" data-mhv="'+esc(h.name)+'">'+inr(cur)+'</div><div class="hret tnum '+cls+'">'+(ret>=0?"+":"")+inr(ret)+' ('+(ret>=0?"+":"")+pct.toFixed(2)+'%)</div></div></div>'; }).join("")+'</div>'; }
+    else { html+='<div class="empty" style="padding:22px 16px">No mutual funds yet.</div>'; }
+    html+='<button class="newbtn" id="exploreFundsBtn">+ Invest in a new fund</button>';
     html+='<div class="sec-title" style="margin-top:22px">Active SIPs</div>';
     if(state.sips.length){ html+='<div class="holdlist">'+state.sips.map(function(s,i){
       return '<div class="siprow" data-sip="'+i+'">'+mfLogoHTML(s.fund)+
@@ -667,6 +704,9 @@
     html+='<button class="newbtn" id="startSipBtn">+ Start a new SIP</button>';
     box.innerHTML=html;
     $("startSipBtn").addEventListener("click",openSip);
+    var ef=$("exploreFundsBtn"); if(ef) ef.addEventListener("click",function(){ exAsset="mf"; nav("explore");
+      $("exAssetTog").querySelectorAll(".eatab").forEach(function(x){x.classList.toggle("active",x.getAttribute("data-a")==="mf");}); });
+    box.querySelectorAll("[data-mf]").forEach(function(el){ el.addEventListener("click",function(){ openDetail("mf",el.getAttribute("data-mf")); }); });
     box.querySelectorAll(".siprow").forEach(function(el){ el.addEventListener("click",function(){
       var i=+el.getAttribute("data-sip"), s=state.sips[i];
       if(confirm("Cancel SIP in "+s.fund+" ("+inr(s.amount)+"/month)?")){ state.sips.splice(i,1); persist(); renderSipSection(); toast("SIP cancelled"); }
@@ -698,8 +738,20 @@
       '<div class="exright"><div class="col"><div class="expx tnum" data-px="'+sym+'">'+inr(px,2)+'</div>'+
       '<div class="exchg tnum '+cls+'" data-chg="'+sym+'">'+(ch>=0?"+":"")+pct.toFixed(2)+'%</div></div>'+
       '<div class="star'+(inWatch(sym)?" on":"")+'" data-star="'+sym+'">'+starSvg()+'</div></div></div>'; }
+  function mfRowHTML(name){ var m=BYMF[name],nav=navOf(name),op=navOpenOf(name),ch=nav-op,pct=op?ch/op*100:0,cls=ch>=0?"up":"down";
+    return '<div class="exrow" data-mf="'+esc(name)+'">'+mfLogoHTML(name)+
+      '<div class="exmid"><div class="exname">'+esc(name)+'</div><div class="exsub">'+esc(m.cat)+' · Mutual Fund</div></div>'+
+      '<div class="exright"><div class="col"><div class="expx tnum" data-mnav="'+esc(name)+'">'+inr(nav,2)+'</div>'+
+      '<div class="exchg tnum '+cls+'" data-mchg="'+esc(name)+'">'+(ch>=0?"+":"")+pct.toFixed(2)+'%</div></div></div></div>'; }
   function renderExplore(){
-    var q=($("searchInput").value||"").trim().toLowerCase();
+    var q=($("searchInput").value||"").trim().toLowerCase(), mf=exAsset==="mf";
+    $("moods").style.display=mf?"none":"flex"; $("chips").style.display=mf?"none":"flex";
+    $("searchInput").placeholder=mf?"Search mutual funds — e.g. Bandhan, Nifty":"Search stocks — e.g. Reliance, TCS";
+    if(mf){
+      var funds=FUNDS.map(function(r){return r[0];}).filter(function(n){ return !q||n.toLowerCase().indexOf(q)>=0; });
+      if(!funds.length){ $("exlist").innerHTML='<div class="empty">No funds match “'+esc(q)+'”.</div>'; return; }
+      $("exlist").innerHTML=funds.map(mfRowHTML).join(""); wireExMf($("exlist")); return;
+    }
     var syms=U.filter(function(r){ if(activeSector!=="All"&&r[3]!==activeSector) return false;
       if(q&&r[0].toLowerCase().indexOf(q)<0&&r[1].toLowerCase().indexOf(q)<0) return false; return true; }).map(function(r){return r[0];});
     if(!q){
@@ -711,12 +763,15 @@
     $("exlist").innerHTML=syms.map(exRowHTML).join(""); wireEx($("exlist"));
   }
   function wireEx(scope){
-    scope.querySelectorAll(".exrow").forEach(function(el){ el.addEventListener("click",function(e){ if(e.target.closest("[data-star]")) return; openDetail(el.getAttribute("data-open")); }); });
+    scope.querySelectorAll(".exrow").forEach(function(el){ el.addEventListener("click",function(e){ if(e.target.closest("[data-star]")) return; openDetail("stock",el.getAttribute("data-open")); }); });
     scope.querySelectorAll("[data-star]").forEach(function(el){ el.addEventListener("click",function(e){ e.stopPropagation(); toggleWatch(el.getAttribute("data-star")); el.classList.toggle("on"); }); });
   }
+  function wireExMf(scope){ scope.querySelectorAll(".exrow").forEach(function(el){ el.addEventListener("click",function(){ openDetail("mf",el.getAttribute("data-mf")); }); }); }
   var searchT; $("searchInput").addEventListener("input",function(){ clearTimeout(searchT); searchT=setTimeout(renderExplore,120); });
   $("moods").querySelectorAll(".mood").forEach(function(b){ b.addEventListener("click",function(){
     $("moods").querySelectorAll(".mood").forEach(function(x){x.classList.remove("active");}); b.classList.add("active"); exMood=b.getAttribute("data-m"); renderExplore(); }); });
+  $("exAssetTog").querySelectorAll(".eatab").forEach(function(b){ b.addEventListener("click",function(){
+    $("exAssetTog").querySelectorAll(".eatab").forEach(function(x){x.classList.remove("active");}); b.classList.add("active"); exAsset=b.getAttribute("data-a"); $("searchInput").value=""; renderExplore(); }); });
 
   function toggleWatch(sym){ var i=state.watchlist.indexOf(sym); if(i>=0){ state.watchlist.splice(i,1); toast("Removed from watchlist"); }
     else { state.watchlist.push(sym); toast("Added to watchlist"); } persist(); updateTabBadge();
@@ -733,11 +788,12 @@
   function renderOrders(){
     var list=$("ordlist");
     if(!state.orders.length){ list.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2M9 3h6v3H9z" stroke-linejoin="round"/></svg><br>No orders yet.<br><span class="cta" data-goto="explore">Place your first trade →</span></div>'; wireGoto(list); return; }
-    list.innerHTML=state.orders.slice().reverse().map(function(o){ var buy=o.side==="BUY";
-      return '<div class="ordrow" data-open="'+o.sym+'"><div class="obadge '+(buy?"buy":"sell")+'">'+(buy?"BUY":"SELL")+'</div>'+
-        '<div class="omid"><div class="oname">'+esc(o.name)+'</div><div class="osub tnum">'+o.qty+' × '+inr(o.px,2)+' · '+fmtDate(o.ts)+'</div></div>'+
+    list.innerHTML=state.orders.slice().reverse().map(function(o){ var buy=o.side==="BUY", kind=o.kind||"stock", id=o.id||o.sym;
+      var sub=kind==="mf"?(Number(o.qty).toFixed(3)+' units @ '+inr(o.px,2)):(o.qty+' × '+inr(o.px,2));
+      return '<div class="ordrow" data-ok="'+kind+'" data-oi="'+esc(String(id))+'"><div class="obadge '+(buy?"buy":"sell")+'">'+(buy?"BUY":"SELL")+'</div>'+
+        '<div class="omid"><div class="oname">'+esc(o.name)+'</div><div class="osub tnum">'+sub+' · '+fmtDate(o.ts)+'</div></div>'+
         '<div class="oright"><div class="ototal tnum">'+inr(o.total)+'</div><div class="ostatus">Executed</div></div></div>'; }).join("");
-    list.querySelectorAll(".ordrow").forEach(function(el){ el.addEventListener("click",function(){ var s=el.getAttribute("data-open"); if(BYSYM[s]) openDetail(s); }); });
+    list.querySelectorAll(".ordrow").forEach(function(el){ el.addEventListener("click",function(){ var k=el.getAttribute("data-ok"),i=el.getAttribute("data-oi"); if(aExists(k,i)) openDetail(k,i); }); });
   }
 
   /* ---------- profile ---------- */
@@ -752,7 +808,7 @@
     else if(p==="sip"){ activeType="mf"; nav("home"); document.querySelectorAll(".seg").forEach(function(x){x.classList.toggle("active",x.getAttribute("data-type")==="mf");}); }
     else if(p==="funds") openEdit("Add funds"); else if(p==="edit") openEdit("Edit profile");
     else if(p==="theme") $("themeBtn").click();
-    else if(p==="reset"){ if(confirm("Reset all data to the sample portfolio?")){ state=JSON.parse(JSON.stringify(DEFAULT)); LIVE={}; persist(); seedHeld(); renderProfile(); nav("home"); toast("App reset"); } }
+    else if(p==="reset"){ if(confirm("Reset all data to the sample portfolio?")){ state=JSON.parse(JSON.stringify(DEFAULT)); LIVE={}; MFLIVE={}; persist(); seedHeld(); renderProfile(); nav("home"); toast("App reset"); } }
   }); });
 
   /* ---------- live refresh ---------- */
@@ -760,42 +816,48 @@
     document.querySelectorAll("[data-px]").forEach(function(el){ el.textContent=inr(priceOf(el.getAttribute("data-px")),2); });
     document.querySelectorAll("[data-chg]").forEach(function(el){ var s=el.getAttribute("data-chg"),pct=pctOf(s); el.textContent=(pct>=0?"+":"")+pct.toFixed(2)+"%"; el.className="exchg tnum "+(pct>=0?"up":"down"); });
     document.querySelectorAll("[data-hpx]").forEach(function(el){ var s=el.getAttribute("data-hpx"),h=state.holdings.find(function(x){return x.sym===s;}); if(h) el.textContent=inr(h.qty*priceOf(s)); });
+    document.querySelectorAll("[data-mnav]").forEach(function(el){ el.textContent=inr(navOf(el.getAttribute("data-mnav")),2); });
+    document.querySelectorAll("[data-mchg]").forEach(function(el){ var n=el.getAttribute("data-mchg"),pct=navPctOf(n); el.textContent=(pct>=0?"+":"")+pct.toFixed(2)+"%"; el.className="exchg tnum "+(pct>=0?"up":"down"); });
+    document.querySelectorAll("[data-mhv]").forEach(function(el){ var n=el.getAttribute("data-mhv"),h=state.holdings.filter(function(x){return x.type==="mf"&&x.name===n;})[0]; if(h) el.textContent=inr(h.qty*navOf(n)); });
     if($("screen-home").classList.contains("active")){ var t=totals();
       $("totalVal").textContent=inr(t.cur); var re=$("totalRet"); re.textContent=inr(t.ret)+"  ("+(t.ret>=0?"+":"")+t.pct.toFixed(2)+"%)"; re.className="val tnum "+(t.ret>=0?"up":"down");
       var up=t.day>=0,base=t.cur-t.day,tp=base?t.day/base*100:0; $("today").className="today "+(up?"up":"down");
       $("today").innerHTML='<span class="arrow">'+(up?"▲":"▼")+'</span> '+inr(Math.abs(t.day))+" ("+(up?"+":"-")+Math.abs(tp).toFixed(2)+"%) Today"; }
-    if($("detail").classList.contains("open")&&curSym) refreshDetailPrice();
+    if($("detail").classList.contains("open")&&curId) refreshDetailPrice();
   }
 
   /* ---------- detail ---------- */
   var detailRange="1D", chartPts=[];
-  function openDetail(sym){ curSym=sym; var m=BYSYM[sym]; if(!m) return;
-    $("dName").textContent=m.n; $("dSym").textContent=sym+" · NSE";
-    updateStar(); detailRange="1D"; $("rangebar").querySelectorAll(".rbtn").forEach(function(b){ b.classList.toggle("active",b.getAttribute("data-r")==="1D"); });
+  function openDetail(kind,id){ if(id===undefined){ id=kind; kind=BYMF[id]?"mf":"stock"; }
+    if(!aExists(kind,id)) return; curKind=kind; curId=id; var mf=kind==="mf";
+    $("dName").textContent=aName(kind,id); $("dSym").textContent=mf?(BYMF[id].cat+" · Mutual Fund"):(id+" · NSE");
+    $("dStar").style.display=mf?"none":"grid"; if(!mf) updateStar();
+    $("buyBtn").textContent=mf?"Invest":"Buy"; $("sellBtn").textContent=mf?"Redeem":"Sell";
+    detailRange="1D"; $("rangebar").querySelectorAll(".rbtn").forEach(function(b){ b.classList.toggle("active",b.getAttribute("data-r")==="1D"); });
     buildChart(); refreshDetailPrice(); renderStats(); renderOwnership();
     $("detail").classList.add("open"); document.body.style.overflow="hidden"; $("dScroll").scrollTop=0;
   }
-  function closeDetail(){ $("detail").classList.remove("open"); document.body.style.overflow=""; curSym=null; }
+  function closeDetail(){ $("detail").classList.remove("open"); document.body.style.overflow=""; curId=null; }
   $("backBtn").addEventListener("click",closeDetail);
-  function updateStar(){ $("dStar").querySelector("svg").style.fill=inWatch(curSym)?"var(--green)":"none";
-    $("dStar").querySelector("svg").style.stroke=inWatch(curSym)?"var(--green)":"currentColor"; }
-  $("dStar").addEventListener("click",function(){ toggleWatch(curSym); updateStar(); });
+  function updateStar(){ $("dStar").querySelector("svg").style.fill=inWatch(curId)?"var(--green)":"none";
+    $("dStar").querySelector("svg").style.stroke=inWatch(curId)?"var(--green)":"currentColor"; }
+  $("dStar").addEventListener("click",function(){ if(curKind!=="stock") return; toggleWatch(curId); updateStar(); });
 
-  function refreshDetailPrice(){ var px=priceOf(curSym),op=openOf(curSym),ch=px-op,pct=op?ch/op*100:0,up=ch>=0;
+  function refreshDetailPrice(){ var px=aPrice(curKind,curId),op=aOpen(curKind,curId),ch=px-op,pct=op?ch/op*100:0,up=ch>=0;
     $("dPrice").textContent=inr(px,2); $("dChg").className="dchg tnum "+(up?"up":"down");
     $("dChg").textContent=(up?"+":"")+inr(ch,2)+" ("+(up?"+":"")+pct.toFixed(2)+"%) Today";
     if(chartPts.length){ chartPts[chartPts.length-1]=px; drawChart(up); } renderOwnership(); }
-  function buildChart(){ var op=openOf(curSym),px=priceOf(curSym),n=detailRange==="1D"?46:detailRange==="1W"?54:detailRange==="1M"?60:80;
+  function buildChart(){ var op=aOpen(curKind,curId),px=aPrice(curKind,curId),n=detailRange==="1D"?46:detailRange==="1W"?54:detailRange==="1M"?60:80;
     var vol=detailRange==="1D"?0.006:detailRange==="1W"?0.012:detailRange==="1M"?0.02:0.03;
-    var start=detailRange==="1D"?op:op*(0.8+0.3*(hash(curSym+detailRange)%100)/100);
-    var seed=hash(curSym+detailRange),pts=[start]; function rnd(){ seed=(seed*9301+49297)%233280; return seed/233280; }
+    var start=detailRange==="1D"?op:op*(0.8+0.3*(hash(curId+detailRange)%100)/100);
+    var seed=hash(curId+detailRange),pts=[start]; function rnd(){ seed=(seed*9301+49297)%233280; return seed/233280; }
     for(var i=1;i<n-1;i++){ var prev=pts[i-1],target=start+(px-start)*(i/(n-1)); pts.push(prev+(target-prev)*0.25+(rnd()-0.5)*prev*vol); }
     pts.push(px); chartPts=pts; drawChart(px>=(detailRange==="1D"?op:start)); }
   function drawChart(up){ var cv=$("dChart"),dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=180; if(!w) return;
     cv.width=w*dpr; cv.height=h*dpr; var ctx=cv.getContext("2d"); ctx.scale(dpr,dpr); ctx.clearRect(0,0,w,h);
     var lo=Math.min.apply(null,chartPts),hi=Math.max.apply(null,chartPts),rng=(hi-lo)||1,pad=12;
     function X(i){return i/(chartPts.length-1)*w;} function Y(v){return pad+(1-(v-lo)/rng)*(h-2*pad);}
-    var css=getComputedStyle(document.documentElement),col=up?"#00d09c":"#eb5b3c",opv=detailRange==="1D"?openOf(curSym):chartPts[0];
+    var css=getComputedStyle(document.documentElement),col=up?"#00d09c":"#eb5b3c",opv=detailRange==="1D"?aOpen(curKind,curId):chartPts[0];
     ctx.setLineDash([4,4]); ctx.strokeStyle=css.getPropertyValue("--hair"); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,Y(opv)); ctx.lineTo(w,Y(opv)); ctx.stroke(); ctx.setLineDash([]);
     ctx.beginPath(); chartPts.forEach(function(v,i){ i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v)); });
     var g=ctx.createLinearGradient(0,0,0,h); g.addColorStop(0,col+"2e"); g.addColorStop(1,col+"00"); ctx.lineTo(w,h); ctx.lineTo(0,h); ctx.closePath(); ctx.fillStyle=g; ctx.fill();
@@ -804,48 +866,95 @@
     ctx.beginPath(); ctx.arc(X(chartPts.length-1),Y(chartPts[chartPts.length-1]),3.2,0,7); ctx.fillStyle=col; ctx.fill(); }
   $("rangebar").querySelectorAll(".rbtn").forEach(function(b){ b.addEventListener("click",function(){
     $("rangebar").querySelectorAll(".rbtn").forEach(function(x){x.classList.remove("active");}); b.classList.add("active"); detailRange=b.getAttribute("data-r"); buildChart(); }); });
-  function renderStats(){ var m=BYSYM[curSym],px=priceOf(curSym),op=openOf(curSym);
-    var lo=Math.min(px,op)*(0.985+(hash(curSym)%20)/2000),hi=Math.max(px,op)*(1.01+(hash(curSym+"h")%20)/2000),pe=12+hash(curSym+"pe")%48;
-    var stats=[["Open",inr(op,2)],["Prev. close",inr(op,2)],["Day low",inr(lo,2)],["Day high",inr(hi,2)],
-      ["52W low",inr(Math.min(px,op)*0.72,2)],["52W high",inr(Math.max(px,op)*1.28,2)],["P/E ratio",pe.toFixed(1)],["Sector",m.sec]];
+  function renderStats(){ var px=aPrice(curKind,curId),op=aOpen(curKind,curId),stats;
+    if(curKind==="mf"){ var m=BYMF[curId];
+      stats=[["Category",m.cat],["Current NAV",inr(px,2)],["Prev. NAV",inr(op,2)],["Fund type","Open-ended"],
+        ["52W low",inr(px*0.78,2)],["52W high",inr(px*1.34,2)],["Expense ratio",(0.4+(hash(curId)%120)/100).toFixed(2)+"%"],
+        ["Risk",["Low","Moderate","Mod. High","High","Very High"][hash(curId)%5]],["Min. lumpsum","₹100"],["Min. SIP","₹500"]];
+    } else { var s=BYSYM[curId];
+      var lo=Math.min(px,op)*(0.985+(hash(curId)%20)/2000),hi=Math.max(px,op)*(1.01+(hash(curId+"h")%20)/2000),pe=12+hash(curId+"pe")%48;
+      stats=[["Open",inr(op,2)],["Prev. close",inr(op,2)],["Day low",inr(lo,2)],["Day high",inr(hi,2)],
+        ["52W low",inr(Math.min(px,op)*0.72,2)],["52W high",inr(Math.max(px,op)*1.28,2)],["P/E ratio",pe.toFixed(1)],["Sector",s.sec]]; }
     $("statgrid").innerHTML=stats.map(function(s){ return '<div class="st"><div class="l">'+s[0]+'</div><div class="v tnum">'+s[1]+'</div></div>'; }).join(""); }
-  function holdingFor(sym){ return state.holdings.find(function(h){return h.type==="stock"&&h.sym===sym;}); }
-  function renderOwnership(){ var h=holdingFor(curSym),box=$("ownbox");
+  function holdingFor(kind,id){ return state.holdings.find(function(h){ return kind==="mf"?(h.type==="mf"&&h.name===id):(h.type==="stock"&&h.sym===id); }); }
+  function renderOwnership(){ var h=holdingFor(curKind,curId),box=$("ownbox"),mf=curKind==="mf";
     if(!h){ box.style.display="none"; $("sellBtn").disabled=true; return; } box.style.display="block"; $("sellBtn").disabled=false;
-    var ltp=priceOf(curSym),cur=h.qty*ltp,inv=h.qty*h.avg,ret=cur-inv,pct=inv?ret/inv*100:0;
-    $("ownQty").textContent=h.qty; $("ownAvg").textContent=inr(h.avg,2); $("ownCur").textContent=inr(cur);
+    var ltp=aPrice(curKind,curId),cur=h.qty*ltp,inv=h.qty*h.avg,ret=cur-inv,pct=inv?ret/inv*100:0;
+    $("ownQty").textContent=mf?(h.qty.toFixed(3)+" units"):(h.qty+" shares"); $("ownAvg").textContent=inr(h.avg,2); $("ownCur").textContent=inr(cur);
     var r=$("ownRet"); r.textContent=(ret>=0?"+":"")+inr(ret)+" ("+(ret>=0?"+":"")+pct.toFixed(2)+"%)"; r.className="val tnum "+(ret>=0?"up":"down"); }
   $("dScroll").addEventListener("scroll",function(){ $("dbar").classList.toggle("scrolled",this.scrollTop>4); });
 
-  /* ---------- trade ---------- */
-  var tradeMode="buy",tradeQty=1;
-  function openTrade(mode){ tradeMode=mode; var m=BYSYM[curSym],held=holdingFor(curSym); tradeQty=1;
-    $("tradeTitle").textContent=mode==="buy"?"Buy":"Sell"; $("tradeConfirm").textContent=(mode==="buy"?"Buy ":"Sell ")+m.n.split(" ")[0];
-    $("tLogo").style.background=colorFor(m.n); $("tLogo").innerHTML=logoInner(logoUrl(curSym),m.n); $("tName").textContent=m.n;
-    $("tTotalLbl").textContent=mode==="buy"?"Order total":"You receive"; $("tBalLbl").textContent=mode==="buy"?"Available balance":"You hold";
-    $("qInput").value=1; syncTrade(); $("tradeSheet").classList.add("open"); $("tradeBackdrop").classList.add("open"); }
+  /* ---------- trade (stocks by quantity, funds by amount) ---------- */
+  var tradeMode="buy";
+  function computeTrade(){ var px=aPrice(curKind,curId),held=holdingFor(curKind,curId);
+    if(curKind!=="mf"){ var qi=$("qInput"); var q=Math.max(1,parseInt(qi?qi.value:1,10)||1); if(tradeMode==="sell"&&held) q=Math.min(q,held.qty);
+      return {q:q,units:q,amount:q*px,px:px,held:held}; }
+    var ai=$("aInput"); var amt=Math.max(0,parseFloat(ai?ai.value:0)||0);
+    if(tradeMode==="sell"&&held){ var maxA=held.qty*px; if(amt>=maxA-1) return {units:held.qty,amount:held.qty*px,px:px,held:held}; }
+    return {units:px?amt/px:0,amount:amt,px:px,held:held}; }
+  function openTrade(mode){ tradeMode=mode; var kind=curKind,id=curId,nm=aName(kind,id),px=aPrice(kind,id),held=holdingFor(kind,id),mf=kind==="mf";
+    $("tradeTitle").textContent=mf?(mode==="buy"?"Invest":"Redeem"):(mode==="buy"?"Buy":"Sell");
+    $("tLogo").style.background=colorFor(nm); $("tLogo").innerHTML=logoInner(mf?mfLogo(id):logoUrl(id),nm); $("tName").textContent=nm;
+    $("tPrice").textContent=inr(px,2)+(mf?" NAV":" / share");
+    var c=$("tradeControls"),h="";
+    if(!mf){
+      h='<div class="qtyrow"><span class="k">Quantity</span><div class="stepper"><button id="qMinus">−</button><input id="qInput" inputmode="numeric" value="1"><button id="qPlus">+</button></div></div>'+
+        '<div class="qtyrow"><span class="k">Approx. price</span><span class="qval tnum" id="tUnit"></span></div>'+
+        '<div class="qtyrow"><span class="k">'+(mode==="buy"?"Order total":"You receive")+'</span><span class="qval tnum" id="tTotal"></span></div>'+
+        '<div class="balline"><span>'+(mode==="buy"?"Available balance":"You hold")+'</span><span class="tnum" id="tBal"></span></div>';
+      c.innerHTML=h;
+      $("qPlus").onclick=function(){ $("qInput").value=(parseInt($("qInput").value,10)||0)+1; syncTrade(); };
+      $("qMinus").onclick=function(){ $("qInput").value=Math.max(1,(parseInt($("qInput").value,10)||1)-1); syncTrade(); };
+      $("qInput").oninput=syncTrade;
+    } else {
+      h='<div class="field"><label>'+(mode==="buy"?"Investment amount (₹)":"Redemption amount (₹)")+'</label><input id="aInput" inputmode="numeric" value="'+(mode==="buy"?"5000":"")+'" placeholder="0"></div>';
+      if(mode==="buy") h+='<div class="amtchips" id="tAmtChips">'+[1000,5000,10000,25000].map(function(a){return '<button class="amtchip" data-a="'+a+'">+'+inr(a)+'</button>';}).join("")+'</div>';
+      else h+='<button class="amtchip" id="redeemAll" style="width:100%;margin:-4px 0 14px">Redeem all units</button>';
+      h+='<div class="qtyrow"><span class="k">Current NAV</span><span class="qval tnum" id="tUnit"></span></div>'+
+         '<div class="qtyrow"><span class="k">Est. units</span><span class="qval tnum" id="tUnits"></span></div>'+
+         '<div class="balline"><span>'+(mode==="buy"?"Available balance":"Current value")+'</span><span class="tnum" id="tBal"></span></div>';
+      c.innerHTML=h;
+      $("aInput").oninput=syncTrade;
+      if(mode==="buy") $("tAmtChips").querySelectorAll(".amtchip").forEach(function(b){ b.onclick=function(){ $("aInput").value=(parseInt($("aInput").value,10)||0)+(+b.getAttribute("data-a")); syncTrade(); }; });
+      else $("redeemAll").onclick=function(){ $("aInput").value=Math.floor(held?held.qty*aPrice(kind,id):0); syncTrade(); };
+    }
+    $("tradeConfirm").textContent=mf?(mode==="buy"?"Invest now":"Redeem now"):((mode==="buy"?"Buy ":"Sell ")+nm.split(" ")[0]);
+    syncTrade(); $("tradeSheet").classList.add("open"); $("tradeBackdrop").classList.add("open"); }
   function closeTrade(){ $("tradeSheet").classList.remove("open"); $("tradeBackdrop").classList.remove("open"); }
-  function syncTrade(){ var px=priceOf(curSym),held=holdingFor(curSym); tradeQty=Math.max(1,parseInt($("qInput").value,10)||1);
-    if(tradeMode==="sell"&&held) tradeQty=Math.min(tradeQty,held.qty); $("qInput").value=tradeQty; var total=tradeQty*px;
-    $("tPrice").textContent=inr(px,2)+" / share"; $("tUnit").textContent=inr(px,2); $("tTotal").textContent=inr(total);
-    if(tradeMode==="buy"){ $("tBal").textContent=inr(state.balance); $("tradeConfirm").disabled=total>state.balance;
-      $("tradeHint").textContent=total>state.balance?"Not enough balance — add funds or reduce quantity.":""; }
-    else { $("tBal").textContent=(held?held.qty:0)+" shares"; $("tradeConfirm").disabled=!held||tradeQty>held.qty; $("tradeHint").textContent=""; } }
-  $("qPlus").addEventListener("click",function(){ $("qInput").value=(parseInt($("qInput").value,10)||0)+1; syncTrade(); });
-  $("qMinus").addEventListener("click",function(){ $("qInput").value=Math.max(1,(parseInt($("qInput").value,10)||1)-1); syncTrade(); });
-  $("qInput").addEventListener("input",syncTrade);
+  function syncTrade(){ var mf=curKind==="mf",px=aPrice(curKind,curId),t=computeTrade(),dis=false,hint="";
+    $("tUnit").textContent=inr(px,2);
+    if(!mf){ $("qInput").value=t.q; $("tTotal").textContent=inr(t.amount);
+      if(tradeMode==="buy"){ $("tBal").textContent=inr(state.balance); dis=t.amount>state.balance; hint=dis?"Not enough balance — add funds or reduce quantity.":""; }
+      else { $("tBal").textContent=(t.held?t.held.qty:0)+" shares"; dis=!t.held||t.q>t.held.qty; }
+    } else { $("tUnits").textContent=t.units.toFixed(3);
+      if(tradeMode==="buy"){ $("tBal").textContent=inr(state.balance); dis=t.amount>state.balance||t.amount<100; hint=t.amount>state.balance?"Not enough balance.":(t.amount>0&&t.amount<100?"Minimum investment is ₹100.":""); }
+      else { $("tBal").textContent=inr(t.held?t.held.qty*px:0); dis=!t.held||t.amount<=0; }
+    }
+    $("tradeConfirm").disabled=dis; $("tradeHint").textContent=hint; }
   $("tradeCancel").addEventListener("click",closeTrade); $("tradeBackdrop").addEventListener("click",closeTrade);
   $("buyBtn").addEventListener("click",function(){ openTrade("buy"); });
-  $("sellBtn").addEventListener("click",function(){ if(holdingFor(curSym)) openTrade("sell"); });
-  $("tradeConfirm").addEventListener("click",function(){ var px=priceOf(curSym),m=BYSYM[curSym],held=holdingFor(curSym),total=tradeQty*px;
-    if(tradeMode==="buy"){ if(total>state.balance){ toast("Not enough balance"); return; } state.balance-=total;
-      if(held){ held.avg=(held.avg*held.qty+px*tradeQty)/(held.qty+tradeQty); held.qty+=tradeQty; } else state.holdings.push({type:"stock",sym:curSym,qty:tradeQty,avg:px});
-      recordOrder("BUY",m.n,tradeQty,px,total); toast("Bought "+tradeQty+" "+m.n.split(" ")[0]); }
-    else { if(!held||tradeQty>held.qty){ toast("Not enough shares"); return; } state.balance+=total; held.qty-=tradeQty;
-      if(held.qty<=0) state.holdings=state.holdings.filter(function(h){return h!==held;});
-      recordOrder("SELL",m.n,tradeQty,px,total); toast("Sold "+tradeQty+" "+m.n.split(" ")[0]); }
-    persist(); closeTrade(); renderOwnership(); renderHome(); $("balance").textContent=inr(state.balance); });
-  function recordOrder(side,name,qty,px,total){ state.orders.push({side:side,sym:curSym,name:name,qty:qty,px:px,total:total,ts:Date.now()}); }
+  $("sellBtn").addEventListener("click",function(){ if(holdingFor(curKind,curId)) openTrade("sell"); });
+  $("tradeConfirm").addEventListener("click",function(){ var kind=curKind,id=curId,nm=aName(kind,id),px=aPrice(kind,id),held=holdingFor(kind,id),t=computeTrade(),mf=kind==="mf";
+    if(tradeMode==="buy"){
+      if(t.amount>state.balance){ toast("Not enough balance"); return; }
+      if(mf && t.amount<100){ toast("Minimum ₹100"); return; }
+      if(!mf && t.amount<=0){ return; }
+      state.balance-=t.amount;
+      if(held){ held.avg=(held.avg*held.qty+px*t.units)/(held.qty+t.units); held.qty+=t.units; }
+      else state.holdings.push(mf?{type:"mf",name:id,qty:t.units,avg:px}:{type:"stock",sym:id,qty:t.units,avg:px});
+      recordOrder("BUY",kind,id,nm,t.units,px,t.amount);
+      toast(mf?("Invested "+inr(t.amount)+" in "+nm.split(" ")[0]):("Bought "+t.units+" "+nm.split(" ")[0]));
+    } else {
+      if(!held||t.amount<=0){ toast("Nothing to "+(mf?"redeem":"sell")); return; }
+      state.balance+=t.amount; held.qty-=t.units;
+      if(held.qty<=1e-6) state.holdings=state.holdings.filter(function(h){return h!==held;});
+      recordOrder("SELL",kind,id,nm,t.units,px,t.amount);
+      toast(mf?("Redeemed "+inr(t.amount)):("Sold "+t.units+" "+nm.split(" ")[0]));
+    }
+    persist(); closeTrade(); renderOwnership(); renderHome();
+    if($("screen-orders").classList.contains("active")) renderOrders();
+    $("balance").textContent=inr(state.balance); });
+  function recordOrder(side,kind,id,name,units,px,total){ state.orders.push({side:side,kind:kind,id:id,sym:kind==="stock"?id:undefined,name:name,qty:units,px:px,total:total,ts:Date.now()}); }
 
   /* ---------- SIP sheet ---------- */
   function openSip(){ $("sipFund").innerHTML=MF_FUNDS.map(function(f){return '<option>'+esc(f)+'</option>';}).join("");
@@ -895,7 +1004,7 @@
   function updateTabBadge(){ /* reserved */ }
 
   /* ---------- boot ---------- */
-  function seedHeld(){ state.holdings.forEach(function(h){ if(h.type==="stock") priceOf(h.sym); }); state.watchlist.forEach(function(s){ if(BYSYM[s]) priceOf(s); }); }
+  function seedHeld(){ state.holdings.forEach(function(h){ if(h.type==="stock") priceOf(h.sym); else navOf(h.name); }); state.watchlist.forEach(function(s){ if(BYSYM[s]) priceOf(s); }); }
   seedHeld(); renderChips(); renderHome();
   setInterval(tick,3000);
 })();
